@@ -2,7 +2,7 @@
 ###############################################################################
 ##
 ##  Input:
-##		VERBOSE_OUTPUT - 'true' -  add module information
+##    VERBOSE_OUTPUT - 'true' -  add module information
 ##    $1 - Message text. 
 ##
 ##  Ouptut:
