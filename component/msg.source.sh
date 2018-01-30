@@ -7,22 +7,35 @@ msg_DEBUG_FILE='&2'
 msg_FATAL_FILE='&s2'
 
 msg_inform(){
-	msg__basic "$1" 'Inform' "$msg_INFORM_FILE"
+	msg__basic "$1" 'Inform' "$msg_INFORM_FILE" '2'
 }
 
 msg_error(){
-	msg__basic "$1"  'Error'  "$msg_ERROR_FILE"
+	msg__basic "$1"  'Error'  "$msg_ERROR_FILE" '2'
 	return 1
 }
 
 msg_debug() {
+
 	local -r msg_VERBOSE_OUTPUT='true'
-	msg__basic "$1" 'Debug' "$msg_DEBUG_FILE"
+	msg__basic "$1" 'Debug' "$msg_DEBUG_FILE" '2'
 }
 
 msg_fatal(){
+	
 	local -r msg_VERBOSE_OUTPUT='true'
-	msg__basic "$1" 'Fatal' "$msg_FATAL_FILE"
+	local -i clvl=2
+
+	msg__basic "$1" 'Fatal' "$msg_FATAL_FILE" $clvl
+	# print call frames for functions above the one that called fatal
+	# This if frame 0 then frame 1 issued call. Report on remaining
+	# call stack: frame 2,3,4,...,n
+	local   pasCallFrame
+	for (( clvl; true; clvl++)) {
+		if [ -z "${FUNCNAME[$clvl]}" ]; then break; fi
+		msg__call_frame "$clvl" 'pasCallFrame'
+		eval echo \"Caller\:\ \$pasCallFrame\" \>$msg_FATAL_FILE
+	}
 	exit 1
 }
 
@@ -30,15 +43,25 @@ msg__basic(){
 	local msg="$1"
 	local -r msgType="$2"
 	local -r outputFile="$3"
+	local -ri msgCallerFrame="$4"
 
-	if [ -z "$messageText" ]; then msg="Message not specified."; fi
+	if [ -z "$msg" ]; then msg="Message not specified."; fi
 
+	local verbose
 	if [ "$msg_VERBOSE_OUTPUT" == 'true' ]; then
-		local verbose=" file='${BASH_SOURCE[2]}'"
-		verbose="$verbose" "lineNo='${BASH_LINENO[2]}'"
-		verbose="$vebose" "func='${BASH_FUNCNAME[2]}'"
+		msg__call_frame "$msgCallerFrame" 'verbose'
 	fi
-	echo "msgType='$msgType'" "msg='$msg'"$verbose >$outputFile
+	eval echo \"msgType=\'\$msgType\'\" \"msg\=\'\$msg\'\"\$verbose \>$outputFile
+}
+
+msg__call_frame(){
+	local -ri callLvl=$1
+	local -r rtnCallFrame="$2"
+
+	local  callFrame=" file='${BASH_SOURCE[$callLvl+1]}'"
+	callFrame="$callFrame lineNo='${BASH_LINENO[$callLvl+1]}'"
+	callFrame="$callFrame func='${FUNCNAME[$callLvl+1]}'"
+	eval $rtnCallFrame\=\"\$callFrame\"
 }
 ###############################################################################
 # 

@@ -1,0 +1,5 @@
+#ignore config and sourcer directories as they haven't been adapted for this project
+config/
+sourcer
+#ingnore components that are used by this repository but don't contribute to the component offerred by this repository.
+test/base/
